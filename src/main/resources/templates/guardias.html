@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Guardias</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        /* ── Header / Navbar ── */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            color: #fff;
+        }
+        .navbar .user-info { font-size: 0.95rem; }
+        .navbar .user-info strong { font-weight: 700; }
+        .btn-logout {
+            padding: 0.5rem 1.2rem;
+            background: rgba(231, 76, 60, 0.85);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-logout:hover { background: #c0392b; }
+
+        /* ── Contenedor principal ── */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* ── Card genérica ── */
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 1.2rem;
+            font-size: 1.35rem;
+        }
+
+        /* ── Formulario ── */
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 180px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.35rem;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.65rem 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn-submit {
+            padding: 0.7rem 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            margin-top: 0.5rem;
+        }
+        .btn-submit:hover { opacity: 0.9; }
+
+        /* ── Mensaje de éxito ── */
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.2rem;
+            font-size: 0.95rem;
+        }
+
+        /* ── Tabla ── */
+        .table-wrapper { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+        thead th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        tbody tr { transition: background 0.2s; }
+        tbody tr:nth-child(even) { background: #f8f9fa; }
+        tbody tr:hover { background: #eef1ff; }
+        tbody td {
+            padding: 0.7rem 1rem;
+            color: #444;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #eee;
+        }
+        .empty-msg {
+            text-align: center;
+            color: #999;
+            padding: 2rem;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Navbar ── -->
+    <div class="container">
+        <div class="navbar">
+            <div class="user-info">
+                👤 Sesión: <strong th:text="${username}">usuario</strong>
+            </div>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="btn-logout">Cerrar Sesión</button>
+            </form>
+        </div>
+
+        <!-- ── Formulario de registro ── -->
+        <div class="card">
+            <h2>📋 Registrar Guardia</h2>
+
+            <div th:if="${mensaje}" class="alert-success" th:text="${mensaje}"></div>
+
+            <form th:action="@{/guardias}" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Guardia</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ej: Juan Pérez" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input type="date" id="fecha" name="fecha" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="horaIngreso">Hora de Ingreso</label>
+                        <input type="time" id="horaIngreso" name="horaIngreso" required />
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">Registrar</button>
+            </form>
+        </div>
+
+        <!-- ── Tabla de guardias registrados ── -->
+        <div class="card">
+            <h2>📄 Guardias Registrados</h2>
+
+            <div th:if="${#lists.isEmpty(guardias)}" class="empty-msg">
+                No hay guardias registrados aún.
+            </div>
+
+            <div th:if="${!#lists.isEmpty(guardias)}" class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Fecha</th>
+                            <th>Hora de Ingreso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="guardia, iter : ${guardias}">
+                            <td th:text="${iter.index + 1}">1</td>
+                            <td th:text="${guardia.nombre}">Nombre</td>
+                            <td th:text="${#temporals.format(guardia.fecha, 'dd/MM/yyyy')}">01/01/2026</td>
+                            <td th:text="${#temporals.format(guardia.horaIngreso, 'HH:mm')}">08:00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
