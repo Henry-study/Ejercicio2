@@ -4,6 +4,7 @@ import com.example.ejercicio2.model.Guardia;
 import com.example.ejercicio2.repository.GuardiaRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Controller
 @RequestMapping("/guardias")
@@ -39,6 +41,33 @@ public class GuardiaController {
         Guardia guardia = new Guardia(nombre, fecha, horaIngreso);
         guardiaRepository.save(guardia);
         redirectAttributes.addFlashAttribute("mensaje", "Guardia registrado exitosamente.");
+        return "redirect:/guardias";
+    }
+    
+    @PostMapping("/eliminar")
+    @Transactional
+    public String eliminarSeleccionados(@RequestParam(value = "guardiasSeleccionados", required = false) List<Long> ids,
+                                       RedirectAttributes redirectAttributes) {
+        try {
+            if (ids != null && !ids.isEmpty()) {
+                // Verificar que los guardias existen antes de eliminar
+                List<Guardia> guardiasAEliminar = guardiaRepository.findAllById(ids);
+                if (guardiasAEliminar.size() != ids.size()) {
+                    redirectAttributes.addFlashAttribute("mensajeError", "Algunos guardias seleccionados no existen.");
+                    return "redirect:/guardias";
+                }
+                
+                guardiaRepository.deleteAllById(ids);
+                int cantidad = ids.size();
+                String mensaje = cantidad == 1 ? "1 guardia eliminado exitosamente." 
+                                              : cantidad + " guardias eliminados exitosamente.";
+                redirectAttributes.addFlashAttribute("mensaje", mensaje);
+            } else {
+                redirectAttributes.addFlashAttribute("mensajeError", "No se seleccionó ningún guardia para eliminar.");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensajeError", "Error al eliminar los guardias: " + e.getMessage());
+        }
         return "redirect:/guardias";
     }
 }

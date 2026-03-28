@@ -144,6 +144,60 @@
             padding: 2rem;
             font-size: 1rem;
         }
+
+        /* ── Controles de eliminación ── */
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+        .checkbox-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .btn-eliminar {
+            padding: 0.6rem 1.5rem;
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-eliminar:hover { background: #c82333; }
+        .btn-eliminar:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .checkbox-th {
+            width: 50px;
+            text-align: center;
+        }
+        .checkbox-td {
+            text-align: center;
+        }
+
+        /* ── Mensaje de error ── */
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.2rem;
+            font-size: 0.95rem;
+        }
     </style>
 </head>
 <body>
@@ -188,32 +242,142 @@
         <div class="card">
             <h2>📄 Guardias Registrados</h2>
 
+            <div th:if="${mensaje}" class="alert-success" th:text="${mensaje}"></div>
+            <div th:if="${mensajeError}" class="alert-error" th:text="${mensajeError}"></div>
+
             <div th:if="${#lists.isEmpty(guardias)}" class="empty-msg">
                 No hay guardias registrados aún.
             </div>
 
-            <div th:if="${!#lists.isEmpty(guardias)}" class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Nombre</th>
-                            <th>Fecha</th>
-                            <th>Hora de Ingreso</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="guardia, iter : ${guardias}">
-                            <td th:text="${iter.index + 1}">1</td>
-                            <td th:text="${guardia.nombre}">Nombre</td>
-                            <td th:text="${#temporals.format(guardia.fecha, 'dd/MM/yyyy')}">01/01/2026</td>
-                            <td th:text="${#temporals.format(guardia.horaIngreso, 'HH:mm')}">08:00</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div th:if="${!#lists.isEmpty(guardias)}">
+                <div class="table-controls">
+                    <div class="checkbox-controls">
+                        <input type="checkbox" id="selectAll" class="checkbox" onchange="toggleSelectAll()" />
+                        <label for="selectAll">Seleccionar todos</label>
+                    </div>
+                    <button type="button" id="btnEliminar" class="btn-eliminar" disabled onclick="eliminarSeleccionados()">
+                        🗑️ Eliminar Seleccionados
+                    </button>
+                </div>
+
+                <form id="formEliminar" th:action="@{/guardias/eliminar}" method="post" style="display: none;">
+                    <!-- Token CSRF requerido por Spring Security -->
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <!-- Los IDs seleccionados se agregarán dinámicamente aquí -->
+                </form>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="checkbox-th">Seleccionar</th>
+                                <th>#</th>
+                                <th>Nombre</th>
+                                <th>Fecha</th>
+                                <th>Hora de Ingreso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="guardia, iter : ${guardias}">
+                                <td class="checkbox-td">
+                                    <input type="checkbox" th:value="${guardia.id}" class="checkbox guardian-checkbox" onchange="updateDeleteButton()" />
+                                </td>
+                                <td th:text="${iter.index + 1}">1</td>
+                                <td th:text="${guardia.nombre}">Nombre</td>
+                                <td th:text="${#temporals.format(guardia.fecha, 'dd/MM/yyyy')}">01/01/2026</td>
+                                <td th:text="${#temporals.format(guardia.horaIngreso, 'HH:mm')}">08:00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+
+    <script>
+        // Función para alternar selección de todos los checkboxes
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const guardianCheckboxes = document.querySelectorAll('.guardian-checkbox');
+
+            guardianCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+
+            updateDeleteButton();
+        }
+
+        // Función para actualizar el estado del botón eliminar
+        function updateDeleteButton() {
+            const guardianCheckboxes = document.querySelectorAll('.guardian-checkbox');
+            const selectedCheckboxes = document.querySelectorAll('.guardian-checkbox:checked');
+            const btnEliminar = document.getElementById('btnEliminar');
+            const selectAllCheckbox = document.getElementById('selectAll');
+
+            // Habilitar/deshabilitar botón eliminar
+            btnEliminar.disabled = selectedCheckboxes.length === 0;
+
+            // Actualizar estado del checkbox "Seleccionar todos"
+            if (selectedCheckboxes.length === 0) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = false;
+            } else if (selectedCheckboxes.length === guardianCheckboxes.length) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.indeterminate = true;
+                selectAllCheckbox.checked = false;
+            }
+        }
+
+        // Función para eliminar guardias seleccionados
+        function eliminarSeleccionados() {
+            const selectedCheckboxes = document.querySelectorAll('.guardian-checkbox:checked');
+
+            if (selectedCheckboxes.length === 0) {
+                alert('Por favor, selecciona al menos un guardia para eliminar.');
+                return;
+            }
+
+            const cantidad = selectedCheckboxes.length;
+            const mensaje = cantidad === 1 ?
+                '¿Estás seguro de que deseas eliminar el guardia seleccionado?' :
+                `¿Estás seguro de que deseas eliminar los ${cantidad} guardias seleccionados?`;
+
+            if (confirm(mensaje)) {
+                const form = document.getElementById('formEliminar');
+
+                // Preservar el token CSRF antes de limpiar el formulario
+                const csrfTokenInput = form.querySelector('input[name*="csrf"]');
+                const csrfToken = csrfTokenInput ? csrfTokenInput.outerHTML : '';
+
+                // Limpiar inputs anteriores
+                form.innerHTML = '';
+
+                // Re-agregar el token CSRF
+                if (csrfToken) {
+                    form.innerHTML = csrfToken;
+                }
+
+                // Agregar inputs hidden con los IDs seleccionados
+                selectedCheckboxes.forEach(checkbox => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'guardiasSeleccionados';
+                    input.value = checkbox.value;
+                    form.appendChild(input);
+                });
+
+                // Enviar formulario
+                form.submit();
+            }
+        }
+
+        // Inicializar estado del botón al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDeleteButton();
+        });
+    </script>
 
 </body>
 </html>
