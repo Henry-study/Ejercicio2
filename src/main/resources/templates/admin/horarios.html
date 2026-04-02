@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración de Horarios</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        /* ── Header / Navbar ── */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            color: #fff;
+        }
+        .navbar .user-info { font-size: 0.95rem; }
+        .navbar .user-info strong { font-weight: 700; }
+        .btn-logout {
+            padding: 0.5rem 1.2rem;
+            background: rgba(231, 76, 60, 0.85);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-logout:hover { background: #c0392b; }
+
+        /* ── Contenedor principal ── */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* ── Card genérica ── */
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 1.2rem;
+            font-size: 1.35rem;
+        }
+
+        /* ── Formulario ── */
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.35rem;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.65rem 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn-submit {
+            padding: 0.7rem 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            margin-top: 0.5rem;
+        }
+        .btn-submit:hover { opacity: 0.9; }
+
+        /* ── Mensajes ── */
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.2rem;
+            font-size: 0.95rem;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.2rem;
+            font-size: 0.95rem;
+        }
+
+        /* ── Tabla ── */
+        .table-wrapper { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+        }
+        thead th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        tbody tr { transition: background 0.2s; }
+        tbody tr:nth-child(even) { background: #f8f9fa; }
+        tbody tr:hover { background: #eef1ff; }
+        tbody td {
+            padding: 0.7rem 1rem;
+            color: #444;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* ── Botones de acción ── */
+        .btn-action {
+            padding: 0.4rem 0.8rem;
+            margin: 0 0.2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .btn-edit { background: #28a745; color: #fff; }
+        .btn-delete { background: #dc3545; color: #fff; }
+        .btn-toggle { background: #17a2b8; color: #fff; }
+        .btn-action:hover { opacity: 0.8; }
+
+        /* ── Estados ── */
+        .badge {
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge-active { background: #d4edda; color: #155724; }
+        .badge-inactive { background: #f8d7da; color: #721c24; }
+
+        /* ── Navegación ── */
+        .breadcrumb {
+            margin-bottom: 1rem;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+        .breadcrumb a {
+            color: #fff;
+            text-decoration: none;
+            opacity: 0.8;
+        }
+        .breadcrumb a:hover { opacity: 1; }
+
+        .empty-msg {
+            text-align: center;
+            color: #999;
+            padding: 2rem;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ── Navbar ── -->
+        <div class="navbar">
+            <div class="user-info">
+                👤 Sesión: <strong th:text="${username}">usuario</strong>
+                <span style="margin-left: 1rem;">|</span>
+                <a href="/guardias" style="color: #fff; text-decoration: none; margin-left: 0.5rem;">🏠 Volver a Guardias</a>
+            </div>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="btn-logout">Cerrar Sesión</button>
+            </form>
+        </div>
+
+        <!-- ── Breadcrumb ── -->
+        <div class="breadcrumb">
+            <a href="/guardias">Guardias</a> / Administración de Horarios
+        </div>
+
+        <!-- ── Formulario para agregar horario ── -->
+        <div class="card">
+            <h2>⏰ Agregar Nuevo Horario</h2>
+
+            <div th:if="${mensaje}" class="alert-success" th:text="${mensaje}"></div>
+            <div th:if="${mensajeError}" class="alert-error" th:text="${mensajeError}"></div>
+
+            <form th:action="@{/admin/horarios/agregar}" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="hora">Hora</label>
+                        <input type="time" id="hora" name="hora" required />
+                    </div>
+                    <div class="form-group" style="flex: 2;">
+                        <label for="descripcion">Descripción</label>
+                        <input type="text" id="descripcion" name="descripcion" placeholder="Ej: 08:00 - Turno Mañana" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="orden">Orden</label>
+                        <input type="number" id="orden" name="orden" value="0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label for="activo">Estado</label>
+                        <select id="activo" name="activo">
+                            <option value="true">Activo</option>
+                            <option value="false">Inactivo</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">Agregar Horario</button>
+            </form>
+        </div>
+
+        <!-- ── Lista de horarios existentes ── -->
+        <div class="card">
+            <h2>📋 Horarios Configurados</h2>
+
+            <div th:if="${#lists.isEmpty(horarios)}" class="empty-msg">
+                No hay horarios configurados aún.
+            </div>
+
+            <div th:if="${!#lists.isEmpty(horarios)}" class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Orden</th>
+                            <th>Hora</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="horario : ${horarios}">
+                            <td th:text="${horario.orden}">0</td>
+                            <td th:text="${#temporals.format(horario.hora, 'HH:mm')}">08:00</td>
+                            <td th:text="${horario.descripcion}">Descripción</td>
+                            <td>
+                                <span th:if="${horario.activo}" class="badge badge-active">Activo</span>
+                                <span th:unless="${horario.activo}" class="badge badge-inactive">Inactivo</span>
+                            </td>
+                            <td>
+                                <!-- Botón toggle activo/inactivo -->
+                                <form th:action="@{/admin/horarios/toggle/{id}(id=${horario.id})}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn-action btn-toggle" th:title="${horario.activo ? 'Desactivar' : 'Activar'}">
+                                        <span th:if="${horario.activo}">🔒</span>
+                                        <span th:unless="${horario.activo}">🔓</span>
+                                    </button>
+                                </form>
+
+                                <!-- Botón eliminar -->
+                                <form th:action="@{/admin/horarios/eliminar/{id}(id=${horario.id})}" method="post" style="display: inline;"
+                                      onsubmit="return confirm('¿Estás seguro de que deseas eliminar este horario?')">
+                                    <button type="submit" class="btn-action btn-delete" title="Eliminar">🗑️</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Información adicional ── -->
+        <div class="card">
+            <h2>ℹ️ Información</h2>
+            <ul style="margin-left: 1.5rem; line-height: 1.6;">
+                <li><strong>Orden:</strong> Determina el orden de aparición en el formulario de guardias</li>
+                <li><strong>Estado Activo:</strong> Solo los horarios activos aparecerán en el formulario</li>
+                <li><strong>Descripción:</strong> Es lo que verá el usuario en el selector de horarios</li>
+                <li><strong>Hora única:</strong> No se pueden tener dos horarios con la misma hora</li>
+            </ul>
+        </div>
+    </div>
+
+</body>
+</html>

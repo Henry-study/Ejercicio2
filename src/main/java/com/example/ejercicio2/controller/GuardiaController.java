@@ -1,7 +1,9 @@
 package com.example.ejercicio2.controller;
 
 import com.example.ejercicio2.model.Guardia;
+import com.example.ejercicio2.model.HorarioDisponible;
 import com.example.ejercicio2.repository.GuardiaRepository;
+import com.example.ejercicio2.repository.HorarioDisponibleRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,15 +23,22 @@ import java.util.List;
 public class GuardiaController {
 
     private final GuardiaRepository guardiaRepository;
+    private final HorarioDisponibleRepository horarioDisponibleRepository;
 
-    public GuardiaController(GuardiaRepository guardiaRepository) {
+    public GuardiaController(GuardiaRepository guardiaRepository, HorarioDisponibleRepository horarioDisponibleRepository) {
         this.guardiaRepository = guardiaRepository;
+        this.horarioDisponibleRepository = horarioDisponibleRepository;
     }
 
     @GetMapping
     public String listar(Authentication authentication, Model model) {
         model.addAttribute("username", authentication.getName());
         model.addAttribute("guardias", guardiaRepository.findAllByOrderByFechaDescHoraIngresoDesc());
+        
+        // Cargar horarios disponibles desde la base de datos
+        List<HorarioDisponible> horariosDisponibles = horarioDisponibleRepository.findByActivoTrueOrderByOrdenAscHoraAsc();
+        model.addAttribute("horariosDisponibles", horariosDisponibles);
+        
         return "guardias";
     }
 

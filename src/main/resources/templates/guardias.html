@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -77,15 +77,17 @@
             font-weight: 600;
             font-size: 0.9rem;
         }
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 0.65rem 0.8rem;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 0.95rem;
             transition: border-color 0.3s;
+            background-color: white;
+            cursor: pointer;
         }
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #667eea;
         }
@@ -203,10 +205,12 @@
 <body>
 
     <!-- ── Navbar ── -->
-    <div class="container">
+        <!-- ── Navbar ── -->
         <div class="navbar">
             <div class="user-info">
                 👤 Sesión: <strong th:text="${username}">usuario</strong>
+                <span sec:authorize="hasRole('ADMIN')" style="margin-left: 1rem;">|</span>
+                <a sec:authorize="hasRole('ADMIN')" href="/admin/horarios" style="color: #fff; text-decoration: none; margin-left: 0.5rem;">⚙️ Admin Horarios</a>
             </div>
             <form th:action="@{/logout}" method="post">
                 <button type="submit" class="btn-logout">Cerrar Sesión</button>
@@ -231,7 +235,14 @@
                     </div>
                     <div class="form-group">
                         <label for="horaIngreso">Hora de Ingreso</label>
-                        <input type="time" id="horaIngreso" name="horaIngreso" required />
+                        <select id="horaIngreso" name="horaIngreso" required>
+                            <option value="">Selecciona una hora...</option>
+                            <option th:each="horario : ${horariosDisponibles}"
+                                    th:value="${#temporals.format(horario.hora, 'HH:mm')}"
+                                    th:text="${horario.descripcion}">
+                                Horario ejemplo
+                            </option>
+                        </select>
                     </div>
                 </div>
                 <button type="submit" class="btn-submit">Registrar</button>
